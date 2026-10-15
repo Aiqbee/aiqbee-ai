@@ -26,30 +26,49 @@ Add to `.cursor/mcp.json` (or the equivalent Cline MCP config file):
 
 ### Claude Desktop
 
-Add to `claude_desktop_config.json`:
+Customize → Connectors → Add → Custom → Web, URL `https://mcp.aiqbee.com/mcp`. Alternatively use the stdio bridge in `claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "aiqbee": {
-      "url": "https://mcp.aiqbee.com/mcp"
+      "command": "npx",
+      "args": ["-y", "@aiqbee/mcp"]
     }
   }
 }
 ```
 
+### Claude Code
+
+```bash
+claude mcp add --transport http aiqbee https://mcp.aiqbee.com/mcp
+claude mcp login aiqbee
+```
+
+### OpenAI Codex CLI
+
+`~/.codex/config.toml`:
+
+```toml
+[mcp_servers.aiqbee]
+url = "https://mcp.aiqbee.com/mcp"
+```
+
+### Windsurf
+
+`~/.config/devin/mcp_config.json` (Cascade; older versions: `~/.codeium/windsurf/mcp_config.json`): `{"mcpServers":{"aiqbee":{"serverUrl":"https://mcp.aiqbee.com/mcp"}}}`
+
 ### VS Code / Copilot
 
-Add to `settings.json`:
+Add to `.mcp.json` at the workspace root (or use `.vscode/mcp.json` with a top-level `servers` key):
 
 ```json
 {
-  "mcp": {
-    "servers": {
-      "aiqbee": {
-        "type": "sse",
-        "url": "https://mcp.aiqbee.com/mcp"
-      }
+  "mcpServers": {
+    "aiqbee": {
+      "type": "http",
+      "url": "https://mcp.aiqbee.com/mcp"
     }
   }
 }
