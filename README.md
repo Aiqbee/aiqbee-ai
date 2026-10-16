@@ -8,15 +8,20 @@ Search, create, and link knowledge across your architecture, portfolio, and digi
 
 ## Supported Clients
 
+Aiqbee is a **remote MCP server** (Streamable HTTP) at `https://mcp.aiqbee.com/mcp` with OAuth 2.0 sign-in.
+
 | AI Tool | Integration | Setup |
 |---------|-------------|-------|
-| **Claude Code** | Plugin | `claude plugin install AIQBee/aiqbee-ai` |
-| **Claude Desktop** | MCP Config | [JSON config below](#claude-desktop) |
-| **Cursor** | MCP Config | [JSON config below](#cursor) |
-| **VS Code / Copilot** | MCP Config | [JSON config below](#vs-code) |
-| **Gemini CLI** | Extension | `gemini extensions install https://github.com/AIQBee/aiqbee-ai` |
-| **ChatGPT** | MCP Config | [JSON config below](#other-mcp-clients) |
-| **Windsurf** | MCP Config | [JSON config below](#other-mcp-clients) |
+| **Claude Code** | Plugin or CLI | [See below](#claude-code) |
+| **Claude Desktop / claude.ai** | Custom Connector | [See below](#claude-desktop--claudeai) |
+| **ChatGPT** | Custom MCP plugin | [See below](#chatgpt) |
+| **Cursor** | MCP Config / Deep link | [See below](#cursor) |
+| **VS Code / GitHub Copilot** | `.vscode/mcp.json` | [See below](#vs-code--github-copilot) |
+| **Gemini CLI** | Extension | [See below](#gemini-cli) |
+| **OpenAI Codex CLI** | `config.toml` | [See below](#openai-codex-cli) |
+| **Windsurf** | MCP Config | [See below](#windsurf) |
+| **Zed** | Context server | [See below](#zed) |
+| **Grok (xAI API)** | Remote MCP tool | [See below](#grok-xai-api) |
 | **Any stdio client** | npx | `npx -y @aiqbee/mcp` |
 
 ---
@@ -25,11 +30,80 @@ Search, create, and link knowledge across your architecture, portfolio, and digi
 
 ### Claude Code
 
+Plugin (includes the `/brain` skill), from your shell:
+
 ```bash
-claude plugin install AIQBee/aiqbee-ai
+claude plugin marketplace add AIQBee/aiqbee-ai
+claude plugin install aiqbee@aiqbee-marketplace
 ```
 
-Restart Claude Code after installation.
+Inside a Claude Code session, use `/plugin marketplace add AIQBee/aiqbee-ai` then `/plugin install aiqbee@aiqbee-marketplace`.
+
+Or add the server directly:
+
+```bash
+claude mcp add --transport http aiqbee https://mcp.aiqbee.com/mcp
+```
+
+Then run `/mcp` inside Claude Code (or `claude mcp login aiqbee` from your shell) to sign in.
+
+### Claude Desktop / claude.ai
+
+Claude Desktop and claude.ai connect to remote servers through **custom connectors**, not `claude_desktop_config.json`:
+
+1. Go to **Customize → Connectors**, click **Add**, then **Custom → Web**.
+2. Name: `Aiqbee`, remote MCP server URL: `https://mcp.aiqbee.com/mcp`. Click **Continue**.
+3. Keep the detected OAuth settings, click **Add**, then connect and sign in with your Aiqbee account.
+
+On Team and Enterprise plans, an Owner adds the connector under **Organization settings → Connectors** first; members then connect individually. Connectors added here are also available in Claude Code when signed in with the same Claude account.
+
+Alternatively, use the [npx bridge](#npx-stdio-clients) in `claude_desktop_config.json`.
+
+### ChatGPT
+
+ChatGPT (web) adds custom MCP servers as plugins:
+
+1. Go to **Plugins**, select **+**, then **Add custom MCP server**.
+2. Name: `Aiqbee`; under **Connection** enter `https://mcp.aiqbee.com/mcp`; authentication: **OAuth**.
+3. Review the risk warning, tick **I understand and want to continue**, then **Create as a plugin**.
+4. Install the plugin and sign in with your Aiqbee account.
+
+Availability depends on your plan and workspace policies. The ChatGPT desktop app shares MCP configuration with Codex; see [OpenAI Codex CLI](#openai-codex-cli).
+
+### Cursor
+
+One-click install link (open in a browser): [Add to Cursor](cursor://anysphere.cursor-deeplink/mcp/install?name=aiqbee&config=eyJ1cmwiOiJodHRwczovL21jcC5haXFiZWUuY29tL21jcCJ9)
+
+Or add to `.cursor/mcp.json` (project) or `~/.cursor/mcp.json` (global):
+
+```json
+{
+  "mcpServers": {
+    "aiqbee": {
+      "url": "https://mcp.aiqbee.com/mcp"
+    }
+  }
+}
+```
+
+### VS Code / GitHub Copilot
+
+Run **MCP: Add Server** from the Command Palette and choose **HTTP**, or add to `.mcp.json` at your workspace root (or `~/.copilot/mcp-config.json` for all workspaces):
+
+```json
+{
+  "mcpServers": {
+    "aiqbee": {
+      "type": "http",
+      "url": "https://mcp.aiqbee.com/mcp"
+    }
+  }
+}
+```
+
+The VS Code–specific `.vscode/mcp.json` format (top-level `servers` instead of `mcpServers`) also works.
+
+Use the tools from Copilot Chat in **Agent** mode.
 
 ### Gemini CLI
 
@@ -37,15 +111,54 @@ Restart Claude Code after installation.
 gemini extensions install https://github.com/AIQBee/aiqbee-ai
 ```
 
-Restart Gemini CLI and authenticate when prompted.
+Restart Gemini CLI and run `/mcp auth aiqbee` if not prompted.
 
-### Claude Desktop
+Or add the server directly:
 
-Add to your `claude_desktop_config.json`:
+```bash
+gemini mcp add --transport http aiqbee https://mcp.aiqbee.com/mcp
+```
+
+### OpenAI Codex CLI
+
+```bash
+codex mcp add aiqbee --url https://mcp.aiqbee.com/mcp
+```
+
+Or add to `~/.codex/config.toml` (shared by Codex CLI, the Codex IDE extension and the ChatGPT desktop app):
+
+```toml
+[mcp_servers.aiqbee]
+url = "https://mcp.aiqbee.com/mcp"
+```
+
+Then sign in:
+
+```bash
+codex mcp login aiqbee
+```
+
+### Windsurf
+
+For the Cascade agent, open **… → Open MCP config file** in the Cascade panel (`~/.config/devin/mcp_config.json` on macOS/Linux, `%APPDATA%\devin\mcp_config.json` on Windows; older Windsurf versions used `~/.codeium/windsurf/mcp_config.json`) and add:
 
 ```json
 {
   "mcpServers": {
+    "aiqbee": {
+      "serverUrl": "https://mcp.aiqbee.com/mcp"
+    }
+  }
+}
+```
+
+### Zed
+
+In Zed, open **Settings → AI → MCP Servers → Add Server → Add Remote Server**, or add to `settings.json` (Zed prompts for OAuth sign-in):
+
+```json
+{
+  "context_servers": {
     "aiqbee": {
       "url": "https://mcp.aiqbee.com/mcp"
     }
@@ -53,36 +166,27 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
-### Cursor
+### Grok (xAI API)
 
-Add to `.cursor/mcp.json` in your project:
-
-```json
-{
-  "mcpServers": {
-    "aiqbee": {
-      "url": "https://mcp.aiqbee.com/mcp"
-    }
-  }
-}
-```
-
-### VS Code
-
-Add to your `settings.json`:
+The xAI API supports remote MCP servers as a tool (Responses API / xAI SDK). xAI connects to the server on your behalf, so it cannot run the interactive OAuth flow; pass an Aiqbee OAuth access token in `authorization`:
 
 ```json
 {
-  "mcp": {
-    "servers": {
-      "aiqbee": {
-        "type": "sse",
-        "url": "https://mcp.aiqbee.com/mcp"
-      }
+  "model": "<grok-model>",
+  "input": "List all my Aiqbee brains",
+  "tools": [
+    {
+      "type": "mcp",
+      "server_url": "https://mcp.aiqbee.com/mcp",
+      "server_label": "aiqbee",
+      "server_description": "Aiqbee knowledge graph (brains, neurons, relationships)",
+      "authorization": "<AIQBEE_ACCESS_TOKEN>"
     }
-  }
+  ]
 }
 ```
+
+Use `allowed_tools` (`allowed_tool_names` in the xAI SDK) to limit Grok to read-only tools such as `aiqbee_search` and `aiqbee_fetch`. See [xAI Remote MCP Tools](https://docs.x.ai/developers/tools/remote-mcp).
 
 ### npx (stdio clients)
 
@@ -101,7 +205,7 @@ For MCP clients that only support stdio transport:
 
 ### Other MCP Clients
 
-For any MCP-compatible client, point it at:
+Point any MCP client that supports Streamable HTTP and OAuth at:
 
 ```
 https://mcp.aiqbee.com/mcp
@@ -113,7 +217,7 @@ https://mcp.aiqbee.com/mcp
 
 Aiqbee uses **OAuth 2.0** with secure authorization. When you first connect, your MCP client will prompt you to sign in. The server supports:
 
-- **Public clients** (Claude Desktop, Cursor): Standard PKCE flow
+- **Public clients** (Claude, Cursor, VS Code, Codex, Gemini CLI): Standard PKCE flow
 - **Confidential clients** (ChatGPT): Server-side PKCE with callback
 
 No API keys needed - just sign in with your existing Aiqbee account.
